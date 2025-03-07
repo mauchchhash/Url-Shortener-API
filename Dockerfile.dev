@@ -1,5 +1,9 @@
 FROM node:alpine
 WORKDIR /app
 COPY . /app
-
+# CMD "sh"
 CMD ["sh", "-c", "yarn install && yarn dev"]
+
+
+# docker build -t uapi -f Dockerfile.dev .
+# docker run -p 3000:3000 -v ./:/app -it --name uapi uapi
