@@ -1,8 +1,8 @@
-import express from 'express'
-import dotEnv from 'dotenv'
-import apiRouter from './routes/api';
-import webRouter from './routes/web';
-import beforeMiddlewares from './middleware/beforeMiddlewares';
+import express from "express";
+import dotEnv from "dotenv";
+import apiRouter from "./routes/api";
+import webRouter from "./routes/web";
+import beforeMiddlewares from "./middleware/beforeMiddlewares";
 
 dotEnv.config();
 const app = express();

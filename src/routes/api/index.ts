@@ -1,4 +1,4 @@
-import { Router } from "express"; 'express';
+import { Router } from "express";
 
 const apiRouter = Router();
 
