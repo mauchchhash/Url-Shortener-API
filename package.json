@@ -1,0 +1,7 @@
+{
+  "name": "UrlShortenerApi",
+  "version": "1.0.0",
+  "description": "Url Shortener Api",
+  "main": "index.js",
+  "license": "MIT"
+}
