@@ -5,7 +5,6 @@ COPY . /app
 # CMD "sh"
 CMD ["sh", "-c", "yarn install && yarn dev"]
 
-
-# docker build -t uapi -f Dockerfile.dev .
+# docker build -t uapi .
 # docker run -p 3000:3000 -v ./:/app -it --name uapi uapi
 # docker exec -it uapi sh
