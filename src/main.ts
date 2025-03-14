@@ -1,4 +1,7 @@
+import dotEnv from "dotenv";
 import app from "./createApp";
+
+dotEnv.config();
 
 const PORT = process?.env?.SERVER_PORT || 3000;
 
