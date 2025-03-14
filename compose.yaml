@@ -1,7 +1,17 @@
 services:
   api:
     build: .
+    restart: on-failure
     volumes:
       - "./:/app"
     ports:
       - "3000:3000"
+  db:
+    image: mongo:latest
+    restart: on-failure
+    ports:
+      - "27017:27017"
+    volumes:
+      - url_shortener_db_data:/data/db
+volumes:
+  url_shortener_db_data:

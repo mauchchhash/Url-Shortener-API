@@ -6,6 +6,7 @@ import beforeMiddlewares from "./middleware/beforeMiddlewares";
 
 dotEnv.config();
 const app = express();
+app.use(express.json());
 
 app.use(beforeMiddlewares);
 app.use(apiRouter);
