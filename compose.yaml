@@ -8,7 +8,8 @@ services:
       - "3000:3000"
   db:
     image: mongo:latest
-    restart: on-failure
+    attach: false
+    restart: always
     ports:
       - "27017:27017"
     volumes:

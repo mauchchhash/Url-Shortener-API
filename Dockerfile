@@ -2,7 +2,6 @@ FROM node:alpine
 RUN corepack enable && yarn set version stable
 WORKDIR /app
 COPY . /app
-# CMD "sh"
 CMD ["sh", "-c", "yarn install && yarn dev"]
 
 # docker build -t uapi .
