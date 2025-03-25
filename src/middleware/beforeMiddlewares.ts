@@ -1,11 +1,16 @@
-import { NextFunction, Request, Response } from "express";
+import { RequestHandler } from "express";
+import { isNotTestEnv } from "../helpers";
 
-function logReqInfo(req: Request, _: Response, next: NextFunction) {
+const logReqInfo: RequestHandler = (req, _, next) => {
   console.log("-------------------------------------------------------------------------------------------------");
   console.log(`${req.method} -- ${req.url}`);
   next();
-}
+};
 
-const beforeMiddlewares = [logReqInfo];
+const beforeMiddlewares: Array<RequestHandler> = [];
+
+if (isNotTestEnv()) {
+  beforeMiddlewares.push(logReqInfo);
+}
 
 export default beforeMiddlewares;
