@@ -6,7 +6,6 @@ let mongoServer: MongoMemoryServer;
 export const connectToTestMongoDB = async () => {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
-  console.log({ uri });
   return mongoose
     .connect(uri)
     .then(() => {

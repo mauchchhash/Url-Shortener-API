@@ -1,4 +1,4 @@
-import { connectToTestMongoDB, disconnectFromTestMongoDB } from "../../src/dbSetup/testMongoSetup";
+import { connectToTestMongoDB, disconnectFromTestMongoDB } from "../../src/database/setup/testMongoSetup";
 
 beforeEach(async () => {
   await connectToTestMongoDB();

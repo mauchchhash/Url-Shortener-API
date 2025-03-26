@@ -1,5 +1,5 @@
 FROM node:bullseye
-# RUN corepack enable && yarn set version stable
+RUN corepack enable && yarn set version stable
 WORKDIR /app
 COPY . /app
 CMD ["sh", "-c", "yarn install && yarn dev"]

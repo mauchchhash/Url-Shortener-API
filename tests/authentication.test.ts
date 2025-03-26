@@ -16,5 +16,6 @@ describe("Authentication suite", () => {
       password: "password",
     };
     const rs = await request(app).post("/register").send(data);
+    expect(rs.statusCode).toEqual(200);
   });
 });

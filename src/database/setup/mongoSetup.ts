@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import { isTestEnv } from "../helpers";
-import configKeys from "../config/keys";
+import { isTestEnv } from "../../helpers";
+import configKeys from "../../config/keys";
 
 const HOST = configKeys.mongoHost;
 const PORT = configKeys.mongoPort;
