@@ -10,8 +10,8 @@ services:
     image: mongo:latest
     attach: false
     restart: always
-    # ports:
-    #   - "27017:27017"
+    ports:
+      - "27017:27017"
     volumes:
       - url_shortener_db_data:/data/db
   test-db:

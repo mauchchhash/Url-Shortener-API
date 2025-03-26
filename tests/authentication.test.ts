@@ -9,14 +9,12 @@ describe("Authentication suite", () => {
   //    - valid input works - return 200
   //    - invalid input doesn't work, returns 422 error
   test("register: username, email, password, fullname", async () => {
-    expect("").toBeFalsy();
-    // const data = {
-    //   fullname: "John Doe",
-    //   username: "johndoe",
-    //   email: "johndoe@example.com",
-    //   password: "password",
-    // };
-    // const rs = await request(app).post("/register").send(data);
-    // console.log(rs.statusCode);
+    const data = {
+      fullname: "John Doe",
+      username: "johndoe",
+      email: "johndoe@example.com",
+      password: "password",
+    };
+    const rs = await request(app).post("/register").send(data);
   });
 });

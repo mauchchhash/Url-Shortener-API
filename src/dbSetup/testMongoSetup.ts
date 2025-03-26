@@ -1,11 +1,12 @@
 import mongoose from "mongoose";
 import dotEnv from "dotenv";
 import { isTestEnv } from "../helpers";
+import configKeys from "../config/keys";
 
 dotEnv.config();
-const HOST = process?.env?.TEST_MONGODB_HOST || "localhost";
-const PORT = process?.env?.TEST_MONGODB_PORT || "27017";
-const DBNAME = process?.env?.TEST_MONGODB_DBNAME || "url_shortener";
+const HOST = configKeys.testMongoHost;
+const PORT = configKeys.testMongoPort;
+const DBNAME = configKeys.testMongoDbName;
 
 const uri = `mongodb://${HOST}:${PORT}/${DBNAME}`;
 const options = {};

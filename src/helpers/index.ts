@@ -1,5 +1,7 @@
+import configKeys from "../config/keys";
+
 export function isTestEnv() {
-  return process?.env?.NODE_ENV == "test" || process?.env?.NODE_ENV == "TEST";
+  return configKeys.appEnv == "test" || configKeys.appEnv == "TEST";
 }
 
 export function isNotTestEnv() {
