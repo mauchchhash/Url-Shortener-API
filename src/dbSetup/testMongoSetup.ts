@@ -1,22 +1,16 @@
 import mongoose from "mongoose";
-import dotEnv from "dotenv";
-import { isTestEnv } from "../helpers";
-import configKeys from "../config/keys";
+import { MongoMemoryServer } from "mongodb-memory-server";
 
-dotEnv.config();
-const HOST = configKeys.testMongoHost;
-const PORT = configKeys.testMongoPort;
-const DBNAME = configKeys.testMongoDbName;
-
-const uri = `mongodb://${HOST}:${PORT}/${DBNAME}`;
-const options = {};
+let mongoServer: MongoMemoryServer;
 
 export const connectToTestMongoDB = async () => {
+  mongoServer = await MongoMemoryServer.create();
+  const uri = mongoServer.getUri();
+  console.log({ uri });
   return mongoose
-    .connect(uri, options)
+    .connect(uri)
     .then(() => {
-      if (isTestEnv()) return;
-      console.log("✅Connected to Database Successfully");
+      // if (isTestEnv()) return;
     })
     .catch((err) => {
       console.log("-------------------------------------------------------------------------------------------------");
@@ -29,4 +23,5 @@ export const connectToTestMongoDB = async () => {
 export const disconnectFromTestMongoDB = async () => {
   await mongoose.connection.dropDatabase();
   await mongoose.connection.close();
+  await mongoServer.stop();
 };

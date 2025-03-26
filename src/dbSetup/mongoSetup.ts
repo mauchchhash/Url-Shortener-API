@@ -1,9 +1,7 @@
 import mongoose from "mongoose";
-import dotEnv from "dotenv";
 import { isTestEnv } from "../helpers";
 import configKeys from "../config/keys";
 
-dotEnv.config();
 const HOST = configKeys.mongoHost;
 const PORT = configKeys.mongoPort;
 const DBNAME = configKeys.mongoDbName;
