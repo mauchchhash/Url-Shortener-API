@@ -1,5 +1,6 @@
 {
   "preset": "ts-jest",
   "testMatch": ["**/tests/**/*.test.ts"],
-  "setupFilesAfterEnv": ["<rootDir>/tests/testConfigs/jest.setup.ts"]
+  "setupFilesAfterEnv": ["<rootDir>/tests/testConfigs/jest.setup.ts"],
+  "maxWorkers": 24
 }

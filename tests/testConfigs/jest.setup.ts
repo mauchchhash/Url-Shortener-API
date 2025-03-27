@@ -1,9 +1,17 @@
-import { connectToTestMongoDB, disconnectFromTestMongoDB } from "../../src/database/setup/testMongoSetup";
+import {
+  clearTestMongoDBCollections,
+  connectToTestMongoDB,
+  disconnectFromTestMongoDB,
+} from "../../src/database/setup/testMongoSetup";
 
-beforeEach(async () => {
+beforeAll(async () => {
   await connectToTestMongoDB();
 });
 
-afterEach(async () => {
+afterAll(async () => {
   await disconnectFromTestMongoDB();
+});
+
+beforeEach(async () => {
+  await clearTestMongoDBCollections();
 });

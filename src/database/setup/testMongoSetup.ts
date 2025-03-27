@@ -24,3 +24,8 @@ export const disconnectFromTestMongoDB = async () => {
   await mongoose.connection.close();
   await mongoServer.stop();
 };
+
+export const clearTestMongoDBCollections = async () => {
+  const collections = Object.values(mongoose.connection.collections);
+  await Promise.all(collections.map((cl) => cl.deleteMany({})));
+};

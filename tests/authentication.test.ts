@@ -3,14 +3,9 @@ import app from "../src/createApp";
 import User from "../src/database/models/UserModel";
 
 describe("Authentication suite", () => {
-  // register: email, password, fullname
-  //    - valid input works - return 200
-  //    - invalid input doesn't work, returns 422 error
-  //    - same email cannot be used twice, returns 422 error
-  // login: email, password
-  //    - valid input works - return 200
-  //    - invalid input doesn't work, returns 422 error
-
+  // ------------------------------------------------------
+  // Registration tests
+  // ------------------------------------------------------
   test("register: valid input registers a user", async () => {
     const data = {
       fullname: "John Doe",
@@ -45,7 +40,7 @@ describe("Authentication suite", () => {
     expect(response.body._errors.email._errors.length).toBeGreaterThan(0);
   });
 
-  test("register: invalid email throws 422 error", async () => {
+  test("register: using same email twice throws 422 error", async () => {
     const data1 = {
       fullname: "John Doe",
       email: "johndoe@example.com",
@@ -62,4 +57,22 @@ describe("Authentication suite", () => {
     expect(response.statusCode).toBe(422);
     expect(response.body._errors.email._errors.length).toBeGreaterThan(0);
   });
+
+  // passwords are not saved as plaint text
+
+  // ------------------------------------------------------
+  // Login tests
+  // ------------------------------------------------------
+  // login: email, password
+  //    - valid input works - return 200
+  //    - invalid input doesn't work, returns 422 error
+  // test("login: valid input logs in a user", async () => {
+  //   const data = {
+  //     email: "johndoe@example.com",
+  //     password: "password",
+  //   };
+  //   const response = await request(app).post("/login").send(data);
+  //
+  //   expect(response.statusCode).toEqual(200);
+  // });
 });
