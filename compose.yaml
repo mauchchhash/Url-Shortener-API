@@ -14,6 +14,11 @@ services:
       - "27017:27017"
     volumes:
       - url_shortener_db_data:/data/db
+  cache:
+    image: redis:alpine
+    restart: always
+    # ports:
+    #   - "6379:6379"
   # test-db:
   #   image: mongo:latest
   #   attach: false

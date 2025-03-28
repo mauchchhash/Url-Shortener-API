@@ -6,8 +6,14 @@ const configKeys = {
   mongoPort: process?.env?.MONGODB_PORT ?? "27017",
   mongoDbName: process?.env?.MONGODB_DBNAME ?? "url_shortener",
 
+  accessTokenSecret: process?.env?.ACCESS_TOKEN_SECRET ?? "27017",
+  refreshTokenSecret: process?.env?.REFRESH_TOKEN_SECRET ?? "url_shortener",
+
   // testMongoHost: process?.env?.TEST_MONGODB_HOST ?? "test-db",
   // testMongoPort: process?.env?.TEST_MONGODB_PORT ?? "27017",
   // testMongoDbName: process?.env?.TEST_MONGODB_DBNAME ?? "test",
+
+  redisPort: +(process?.env?.REDIS_PORT ?? "6379"),
+  redisHost: process?.env?.REDIS_HOST ?? "cache",
 };
 export default configKeys;
