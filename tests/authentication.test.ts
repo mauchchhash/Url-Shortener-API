@@ -1,6 +1,7 @@
 import request from "supertest";
 import app from "../src/createApp";
 import User from "../src/database/models/UserModel";
+import bcrypt from "bcrypt";
 
 describe("Authentication suite", () => {
   // ------------------------------------------------------
@@ -58,7 +59,20 @@ describe("Authentication suite", () => {
     expect(response.body._errors.email._errors.length).toBeGreaterThan(0);
   });
 
-  // passwords are not saved as plaint text
+  test("register: passwords are saved as hashed string", async () => {
+    const data = {
+      fullname: "John Doe",
+      email: "johndoe@example.com",
+      password: "password",
+    };
+    const response = await request(app).post("/register").send(data);
+
+    const id = response.body.createdUserId;
+    const dbUser = await User.findById({ _id: id }).exec();
+    expect(dbUser?.password).not.toBe(data.password);
+    expect(typeof dbUser?.password).toBe("string");
+    expect(await bcrypt.compare(data.password, dbUser?.password as string)).toBeTruthy();
+  });
 
   // ------------------------------------------------------
   // Login tests
