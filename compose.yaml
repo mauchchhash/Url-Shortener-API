@@ -19,9 +19,6 @@ services:
     restart: always
     # ports:
     #   - "6379:6379"
-  # test-db:
-  #   image: mongo:latest
-  #   attach: false
-  #   restart: always
 volumes:
   url_shortener_db_data:
+    external: true
