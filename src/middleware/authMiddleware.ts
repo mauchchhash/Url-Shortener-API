@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 import configKeys from "../config/keys";
 import mongoose from "mongoose";
+import redisClient from "../redisClientSetup";
 
 const authMiddleware: RequestHandler = async (req, res, next) => {
   const authHeader = req.headers["authorization"];
@@ -10,7 +11,13 @@ const authMiddleware: RequestHandler = async (req, res, next) => {
     return;
   }
   const [tokenType, accessToken] = authHeader.split(" ");
-  if (tokenType != "Bearer") {
+  if (tokenType != "Bearer" || !accessToken) {
+    res.status(401).json({ success: false, message: "Unauthorized" });
+    return;
+  }
+
+  const isBlockedAccessToken = await redisClient.get("blockedAccessToken:" + accessToken);
+  if (isBlockedAccessToken) {
     res.status(401).json({ success: false, message: "Unauthorized" });
     return;
   }

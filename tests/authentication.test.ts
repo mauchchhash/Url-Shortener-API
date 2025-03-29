@@ -1,6 +1,6 @@
 import request from "supertest";
 import app from "../src/createApp";
-import User from "../src/database/models/UserModel";
+import User, { IUser } from "../src/database/models/UserModel";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import configKeys from "../src/config/keys";
@@ -160,7 +160,7 @@ describe("Authentication suite", () => {
   });
 
   test("Login: accessToken, expiresAt & refreshToken is returned after login", async () => {
-    const user = await User.create({
+    await User.create({
       fullname: "John Doe",
       email: "johndoe@example.com",
       password: await bcrypt.hash("password", 10),
@@ -184,5 +184,94 @@ describe("Authentication suite", () => {
     expect(loginResponse.body.refreshToken).toBeDefined();
     const refreshToken = loginResponse.body.refreshToken;
     expect(typeof refreshToken).toBe("string");
+  });
+
+  // ------------------------------------------------------
+  // Logout tests
+  // ------------------------------------------------------
+  test("Logout: reponse returns 204 code", async () => {
+    await User.create({
+      fullname: "John Doe",
+      email: "johndoe@example.com",
+      password: await bcrypt.hash("password", 10),
+      createdAt: new Date(),
+    });
+
+    const loginData = {
+      email: "johndoe@example.com",
+      password: "password",
+    };
+    const loginResponse = await request(app).post("/api/login").send(loginData);
+    const accessToken = loginResponse.body.accessToken;
+    const refreshToken = loginResponse.body.refreshToken;
+    const logoutResponse = await request(app)
+      .post("/api/logout")
+      .set("Authorization", "Bearer " + accessToken)
+      .send({ refreshToken });
+    expect(logoutResponse.statusCode).toBe(204);
+  });
+
+  // ------------------------------------------------------
+  // Authorization tests
+  // ------------------------------------------------------
+  describe("Authorization tests", () => {
+    let accessToken: string = "";
+    // let expiresAt: number = 0;
+    let refreshToken: string = "";
+    let defaultCreatedUser: IUser | undefined;
+
+    beforeEach(async () => {
+      defaultCreatedUser = await User.create({
+        fullname: "John Doe",
+        email: "johndoe@example.com",
+        password: await bcrypt.hash("password", 10),
+        createdAt: new Date(),
+      });
+      const loginResponse = await request(app).post("/api/login").send({
+        email: "johndoe@example.com",
+        password: "password",
+      });
+      accessToken = loginResponse.body.accessToken;
+      // expiresAt = loginResponse.body.expiresAt;
+      refreshToken = loginResponse.body.refreshToken;
+    });
+
+    test("Authorization: user can fetch own's profile data with the accesstoken", async () => {
+      const response = await request(app)
+        .get("/api/users/me")
+        .set("Authorization", "Bearer " + accessToken);
+      expect(response?.body?.data?._id).toBe(defaultCreatedUser?._id?.toString());
+    });
+
+    test("Authorization: user can refresh his accesstoken", async () => {
+      const response = await request(app).post("/api/auth/getNewAccessToken").send({ token: refreshToken });
+      expect(response?.body?.accessToken).toBeDefined();
+    });
+
+    test("Authorization: new accessToken works perfectly", async () => {
+      const response = await request(app).post("/api/auth/getNewAccessToken").send({ token: refreshToken });
+      expect(response?.body?.accessToken).toBeDefined();
+      const newAccessToken = response?.body?.accessToken;
+      const response2 = await request(app)
+        .get("/api/users/me")
+        .set("Authorization", "Bearer " + newAccessToken);
+      expect(response2?.body?.data?._id).toBe(defaultCreatedUser?._id?.toString());
+    });
+
+    test("After logout old accessToken & refreshToken doesn't work", async () => {
+      const logoutResponse = await request(app)
+        .post("/api/logout")
+        .set("Authorization", "Bearer " + accessToken)
+        .send({ refreshToken });
+      expect(logoutResponse.statusCode).toBe(204);
+
+      const res1 = await request(app)
+        .get("/api/users/me")
+        .set("Authorization", "Bearer " + accessToken);
+      expect(res1?.statusCode).toBe(401);
+
+      const res2 = await request(app).post("/api/auth/getNewAccessToken").send({ token: refreshToken });
+      expect(res2?.statusCode).toBe(403);
+    });
   });
 });

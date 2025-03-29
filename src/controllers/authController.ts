@@ -76,6 +76,40 @@ const login: RequestHandler = async (req, res) => {
   res.status(200).json({ success: true, message: "User Logged in", accessToken, expiresAt, refreshToken });
 };
 
+const logout: RequestHandler = async (req, res) => {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader || typeof authHeader != "string") {
+    res.status(401).json({ success: false, message: "Unauthorized" });
+    return;
+  }
+  const refreshToken = req?.body?.refreshToken;
+  if (!refreshToken || typeof refreshToken != "string") {
+    res.status(422).json({ success: false, message: "No refreshToken provided" });
+    return;
+  }
+
+  const [tokenType, accessToken] = authHeader.split(" ");
+  if (tokenType != "Bearer") {
+    res.status(401).json({ success: false, message: "Unauthorized" });
+    return;
+  }
+
+  const isCachedRefreshToken = await redisClient.get("refreshToken:" + refreshToken);
+  if (!isCachedRefreshToken) {
+    res.status(422).json({ success: false, message: "Invalid refresh Token" });
+    return;
+  }
+
+  await redisClient.set(
+    "blockedAccessToken:" + accessToken,
+    req?.authUserId?.toString() ?? isCachedRefreshToken,
+    "EX",
+    (configConstants.accessTokenValidityInMinutes + 1) * 60,
+  );
+  await redisClient.del("refreshToken:" + refreshToken);
+  res.status(204).json({ success: true, message: "Logged out" });
+};
+
 const getNewAccessToken: RequestHandler = async (req, res) => {
   const token = req?.body?.token;
   if (!token) {
@@ -109,5 +143,6 @@ const getNewAccessToken: RequestHandler = async (req, res) => {
 export default {
   register,
   login,
+  logout,
   getNewAccessToken,
 };
