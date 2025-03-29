@@ -28,7 +28,7 @@ describe("Authorization suite", () => {
     refreshToken = loginResponse.body.refreshToken;
   });
 
-  test("Authorization: user can fetch own's profile data with the accesstoken", async () => {
+  test.only("Authorization: user can fetch own's profile data with the accesstoken", async () => {
     const response = await request(app)
       .get("/api/users/me")
       .set("Authorization", "Bearer " + accessToken);

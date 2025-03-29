@@ -1,8 +1,14 @@
 import { RequestHandler } from "express";
 import userRTO from "../rto/userRTO";
+import { setAuthUserToRequest } from "../helpers/auth";
 
 const getOwnProfileInfo: RequestHandler = async (req, res) => {
-  const authUser = req.authUser;
+  if (!req.authUserId) {
+    res.status(500).json({ success: false });
+    return;
+  }
+
+  const authUser = req.authUser ?? (await setAuthUserToRequest(req, req.authUserId));
   if (!authUser) {
     res.status(500).json({ success: false });
     return;
