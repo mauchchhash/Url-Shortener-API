@@ -158,4 +158,31 @@ describe("Authentication suite", () => {
     const loginResponse = await request(app).post("/api/login").send(loginData);
     expect(loginResponse.statusCode).toBe(422);
   });
+
+  test("Login: accessToken, expiresAt & refreshToken is returned after login", async () => {
+    const user = await User.create({
+      fullname: "John Doe",
+      email: "johndoe@example.com",
+      password: await bcrypt.hash("password", 10),
+      createdAt: new Date(),
+    });
+
+    const loginData = {
+      email: "johndoe@example.com",
+      password: "password",
+    };
+    const loginResponse = await request(app).post("/api/login").send(loginData);
+    expect(loginResponse.body.accessToken).toBeDefined();
+    const accessToken = loginResponse.body.accessToken;
+    expect(typeof accessToken).toBe("string");
+
+    expect(loginResponse.body.expiresAt).toBeDefined();
+    const expiresAt = loginResponse.body.expiresAt;
+    expect(typeof expiresAt).toBe("number");
+    expect(new Date(expiresAt)).toBeInstanceOf(Date);
+
+    expect(loginResponse.body.refreshToken).toBeDefined();
+    const refreshToken = loginResponse.body.refreshToken;
+    expect(typeof refreshToken).toBe("string");
+  });
 });

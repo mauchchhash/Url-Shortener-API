@@ -1,9 +1,12 @@
 import { RequestHandler } from "express";
-import User from "../database/models/UserModel";
+import User, { IUser } from "../database/models/UserModel";
 import { validateLoginRequest, validateRegisterRequest } from "../validation/authValidator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import configKeys from "../config/keys";
+import redisClient from "../redisClientSetup";
+import configConstants from "../config/constants";
+import { generateAccessTokenForUser } from "../helpers/auth";
 
 const register: RequestHandler = async (req, res) => {
   const reqData = req?.body;
@@ -58,15 +61,53 @@ const login: RequestHandler = async (req, res) => {
     return;
   }
 
-  const accessToken = jwt.sign(
-    { _id: existingUser._id, tokenCreatedAt: new Date().toISOString() },
+  const { accessToken, expiresAt } = generateAccessTokenForUser(
+    existingUser,
     configKeys.accessTokenSecret,
+    configConstants.accessTokenValidityInMinutes,
   );
 
-  res.status(200).json({ success: true, message: "User Logged in", accessToken });
+  const refreshToken = jwt.sign(
+    { _id: existingUser._id, tokenCreatedAt: new Date().toISOString() },
+    configKeys.refreshTokenSecret,
+  );
+  redisClient.set("refreshToken:" + refreshToken, existingUser._id.toString());
+
+  res.status(200).json({ success: true, message: "User Logged in", accessToken, expiresAt, refreshToken });
+};
+
+const getNewAccessToken: RequestHandler = async (req, res) => {
+  const token = req?.body?.token;
+  if (!token) {
+    res.status(422).json({ success: false, message: "Token not provided" });
+    return;
+  }
+
+  const refreshTokenFound = !!(await redisClient.get("refreshToken:" + token));
+  if (!refreshTokenFound) {
+    res.status(403).json({ success: false, message: "Invalid Token" });
+    return;
+  }
+
+  const decodedData = <{ _id: string } & object>jwt.verify(token, configKeys.refreshTokenSecret);
+  const userId = decodedData?._id;
+  const user = await User.findOne({ _id: userId }).exec();
+  if (!user) {
+    res.status(401).json({ success: false, message: "Unauthorized" });
+    return;
+  }
+
+  const { accessToken, expiresAt } = generateAccessTokenForUser(
+    user,
+    configKeys.accessTokenSecret,
+    configConstants.accessTokenValidityInMinutes,
+  );
+
+  res.status(200).json({ success: true, message: "Token Refreshed", accessToken, expiresAt });
 };
 
 export default {
   register,
   login,
+  getNewAccessToken,
 };
