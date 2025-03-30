@@ -15,5 +15,7 @@ const configKeys = {
 
   redisPort: +(process?.env?.REDIS_PORT ?? "6379"),
   redisHost: process?.env?.REDIS_HOST ?? "cache",
+
+  allowedOriginForCors: process?.env?.ALLOWED_ORIGIN_FOR_CORS?.split(",") ?? ["*"],
 };
 export default configKeys;
