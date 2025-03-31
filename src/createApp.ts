@@ -5,8 +5,10 @@ import beforeMiddlewares from "./middleware/beforeMiddlewares";
 import { connectToDB } from "./database/setup/database";
 import cors from "cors";
 import configKeys from "./config/keys";
+import cookieParser from "cookie-parser";
 
 const app = express();
+app.use(cookieParser());
 app.use(
   cors({
     origin: configKeys.allowedOriginForCors,

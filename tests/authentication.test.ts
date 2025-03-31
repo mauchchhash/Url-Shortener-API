@@ -4,6 +4,7 @@ import User, { IUser } from "../src/database/models/UserModel";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import configKeys from "../src/config/keys";
+import { getRefreshTokenFromSuperTestResponse } from "../src/helpers/auth";
 
 describe("Authentication suite", () => {
   // ------------------------------------------------------
@@ -181,8 +182,10 @@ describe("Authentication suite", () => {
     expect(typeof expiresAt).toBe("number");
     expect(new Date(expiresAt)).toBeInstanceOf(Date);
 
-    expect(loginResponse.body.refreshToken).toBeDefined();
-    const refreshToken = loginResponse.body.refreshToken;
+    const cookies = loginResponse.headers["set-cookie"];
+    expect(Array.isArray(cookies)).toBe(true);
+    const refreshToken = getRefreshTokenFromSuperTestResponse(loginResponse);
+    expect(refreshToken).toBeDefined();
     expect(typeof refreshToken).toBe("string");
   });
 
@@ -203,11 +206,11 @@ describe("Authentication suite", () => {
     };
     const loginResponse = await request(app).post("/api/login").send(loginData);
     const accessToken = loginResponse.body.accessToken;
-    const refreshToken = loginResponse.body.refreshToken;
+    const refreshToken = getRefreshTokenFromSuperTestResponse(loginResponse);
     const logoutResponse = await request(app)
       .post("/api/logout")
       .set("Authorization", "Bearer " + accessToken)
-      .send({ refreshToken });
+      .set("Cookie", "refreshToken=" + refreshToken);
     expect(logoutResponse.statusCode).toBe(204);
   });
 
@@ -233,7 +236,7 @@ describe("Authentication suite", () => {
       });
       accessToken = loginResponse.body.accessToken;
       // expiresAt = loginResponse.body.expiresAt;
-      refreshToken = loginResponse.body.refreshToken;
+      refreshToken = getRefreshTokenFromSuperTestResponse(loginResponse);
     });
 
     test("Authorization: user can fetch own's profile data with the accesstoken", async () => {
@@ -244,12 +247,16 @@ describe("Authentication suite", () => {
     });
 
     test("Authorization: user can refresh his accesstoken", async () => {
-      const response = await request(app).post("/api/auth/getNewAccessToken").send({ token: refreshToken });
+      const response = await request(app)
+        .post("/api/auth/getNewAccessToken")
+        .set("Cookie", "refreshToken=" + refreshToken);
       expect(response?.body?.accessToken).toBeDefined();
     });
 
     test("Authorization: new accessToken works perfectly", async () => {
-      const response = await request(app).post("/api/auth/getNewAccessToken").send({ token: refreshToken });
+      const response = await request(app)
+        .post("/api/auth/getNewAccessToken")
+        .set("Cookie", "refreshToken=" + refreshToken);
       expect(response?.body?.accessToken).toBeDefined();
       const newAccessToken = response?.body?.accessToken;
       const response2 = await request(app)
@@ -262,7 +269,7 @@ describe("Authentication suite", () => {
       const logoutResponse = await request(app)
         .post("/api/logout")
         .set("Authorization", "Bearer " + accessToken)
-        .send({ refreshToken });
+        .set("Cookie", "refreshToken=" + refreshToken);
       expect(logoutResponse.statusCode).toBe(204);
 
       const res1 = await request(app)
@@ -270,7 +277,9 @@ describe("Authentication suite", () => {
         .set("Authorization", "Bearer " + accessToken);
       expect(res1?.statusCode).toBe(401);
 
-      const res2 = await request(app).post("/api/auth/getNewAccessToken").send({ token: refreshToken });
+      const res2 = await request(app)
+        .post("/api/auth/getNewAccessToken")
+        .set("Cookie", "refreshToken=" + refreshToken);
       expect(res2?.statusCode).toBe(403);
     });
   });

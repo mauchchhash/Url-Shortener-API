@@ -2,6 +2,7 @@ import { Request } from "express";
 import User, { IUser } from "../database/models/UserModel";
 import jwt from "jsonwebtoken";
 import { Types } from "mongoose";
+import { Response } from "supertest";
 
 export const generateAccessTokenForUser = (
   user: IUser,
@@ -22,4 +23,14 @@ export const setAuthUserToRequest = async (req: Request, userId: Types.ObjectId 
     req.authUser = user;
   }
   return req.authUser;
+};
+
+export const getRefreshTokenFromSuperTestResponse = (response: Response) => {
+  const cookies = response.headers["set-cookie"];
+  return Array.isArray(cookies)
+    ? cookies
+        .find((c) => c.startsWith("refreshToken="))
+        .slice("refreshToken=".length)
+        .split(";")[0]
+    : undefined;
 };
