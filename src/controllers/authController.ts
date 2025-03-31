@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import User, { IUser } from "../database/models/UserModel";
+import User from "../database/models/UserModel";
 import { validateLoginRequest, validateRegisterRequest } from "../validation/authValidator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -8,7 +8,6 @@ import redisClient from "../redisClientSetup";
 import configConstants from "../config/constants";
 import { generateAccessTokenForUser } from "../helpers/auth";
 import { isNotTestEnv } from "../helpers";
-import { access } from "node:fs/promises";
 
 const register: RequestHandler = async (req, res) => {
   const reqData = req?.body;

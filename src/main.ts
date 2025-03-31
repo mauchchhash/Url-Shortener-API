@@ -1,8 +1,7 @@
 import dotEnv from "dotenv";
+dotEnv.config();
 import app from "./createApp";
 import configKeys from "./config/keys";
-
-dotEnv.config();
 
 const PORT = configKeys.serverPort;
 

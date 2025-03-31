@@ -1,3 +1,5 @@
+import dotEnv from "dotenv";
+dotEnv.config();
 import express from "express";
 import apiRouter from "./routes/api";
 import webRouter from "./routes/web";
