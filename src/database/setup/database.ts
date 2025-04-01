@@ -1,4 +1,4 @@
-import { isTestEnv } from "../../helpers";
+import { isTestEnv } from "../../utils/helpers";
 import { connectToMongoDB } from "./mongoSetup";
 
 export const connectToDB = () => {

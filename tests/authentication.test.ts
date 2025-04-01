@@ -4,7 +4,7 @@ import User, { IUser } from "../src/database/models/UserModel";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import configKeys from "../src/config/keys";
-import { getRefreshTokenFromSuperTestResponse } from "../src/helpers/auth";
+import { getRefreshTokenFromSuperTestResponse } from "../src/utils/auth";
 
 describe("Authentication suite", () => {
   // ------------------------------------------------------

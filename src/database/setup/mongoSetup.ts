@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { isTestEnv } from "../../helpers";
+import { isTestEnv } from "../../utils/helpers";
 import configKeys from "../../config/keys";
 
 const HOST = configKeys.mongoHost;

@@ -6,8 +6,8 @@ import jwt from "jsonwebtoken";
 import configKeys from "../config/keys";
 import redisClient from "../redisClientSetup";
 import configConstants from "../config/constants";
-import { generateAccessTokenForUser } from "../helpers/auth";
-import { isNotTestEnv, isProdEnv } from "../helpers";
+import { generateAccessTokenForUser } from "../utils/auth";
+import { isNotTestEnv } from "../utils/helpers";
 
 const register: RequestHandler = async (req, res) => {
   const reqData = req?.body;
@@ -72,15 +72,28 @@ const login: RequestHandler = async (req, res) => {
     { _id: existingUser._id, tokenCreatedAt: new Date().toISOString() },
     configKeys.refreshTokenSecret,
   );
-  redisClient.set("refreshToken:" + refreshToken, existingUser._id.toString());
+  redisClient.set(
+    "refreshToken:" + refreshToken,
+    existingUser._id.toString(),
+    "EX",
+    (configConstants.refreshTokenValidityInDays + 1) * 24 * 60 * 60,
+  );
 
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: isNotTestEnv(), // Secure only in production
-    sameSite: "none",
-    path: "/api/logout",
-    maxAge: configConstants.refreshTokenValidityInDays * 24 * 60 * 60 * 1000,
-  });
+  res
+    .cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: isNotTestEnv(),
+      sameSite: "none",
+      path: "/api/auth/getNewAccessToken",
+      maxAge: configConstants.refreshTokenValidityInDays * 24 * 60 * 60 * 1000,
+    })
+    .cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: isNotTestEnv(),
+      sameSite: "none",
+      path: "/api/logout",
+      maxAge: configConstants.refreshTokenValidityInDays * 24 * 60 * 60 * 1000,
+    });
   res.status(200).json({ success: true, message: "User Logged in", accessToken, expiresAt });
 };
 
@@ -116,7 +129,13 @@ const logout: RequestHandler = async (req, res) => {
     (configConstants.accessTokenValidityInMinutes + 1) * 60,
   );
   await redisClient.del("refreshToken:" + refreshToken);
-  res.clearCookie("refreshToken");
+  res
+    .clearCookie("refreshToken", {
+      path: "/api/auth/getNewAccessToken",
+    })
+    .clearCookie("refreshToken", {
+      path: "/api/logout",
+    });
   res.status(204).json({ success: true, message: "Logged out" });
 };
 
@@ -127,10 +146,24 @@ const getNewAccessToken: RequestHandler = async (req, res) => {
     return;
   }
 
-  const refreshTokenFound = !!(await redisClient.get("refreshToken:" + refreshToken));
+  const cachedResult = await redisClient.get("refreshToken:" + refreshToken);
+  const refreshTokenFound = !!cachedResult;
   if (!refreshTokenFound) {
     res.status(403).json({ success: false, message: "Invalid Token" });
     return;
+  }
+
+  const authHeader = req.headers["authorization"];
+  if (authHeader && typeof authHeader == "string") {
+    const [tokenType, accessToken] = authHeader.split(" ");
+    if (tokenType == "Bearer" && accessToken && typeof accessToken == "string") {
+      await redisClient.set(
+        "blockedAccessToken:" + accessToken,
+        req?.authUserId?.toString() ?? cachedResult,
+        "EX",
+        (configConstants.accessTokenValidityInMinutes + 1) * 60,
+      );
+    }
   }
 
   const decodedData = <{ _id: string } & object>jwt.verify(refreshToken, configKeys.refreshTokenSecret);

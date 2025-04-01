@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import userRTO from "../rto/userRTO";
-import { setAuthUserToRequest } from "../helpers/auth";
+import { setAuthUserToRequest } from "../utils/auth";
 
 const getOwnProfileInfo: RequestHandler = async (req, res) => {
   if (!req.authUserId) {

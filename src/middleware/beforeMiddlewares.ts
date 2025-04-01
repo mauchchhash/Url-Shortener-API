@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { isNotTestEnv } from "../helpers";
+import { isNotTestEnv } from "../utils/helpers";
 
 const logReqInfo: RequestHandler = (req, _, next) => {
   console.log("-------------------------------------------------------------------------------------------------");
