@@ -83,14 +83,14 @@ const login: RequestHandler = async (req, res) => {
     .cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: isNotTestEnv(),
-      sameSite: "none",
+      sameSite: "strict",
       path: "/api/auth/getNewAccessToken",
       maxAge: configConstants.refreshTokenValidityInDays * 24 * 60 * 60 * 1000,
     })
     .cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: isNotTestEnv(),
-      sameSite: "none",
+      sameSite: "strict",
       path: "/api/logout",
       maxAge: configConstants.refreshTokenValidityInDays * 24 * 60 * 60 * 1000,
     });
