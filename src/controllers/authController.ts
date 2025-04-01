@@ -7,7 +7,7 @@ import configKeys from "../config/keys";
 import redisClient from "../redisClientSetup";
 import configConstants from "../config/constants";
 import { generateAccessTokenForUser } from "../helpers/auth";
-import { isNotTestEnv } from "../helpers";
+import { isNotTestEnv, isProdEnv } from "../helpers";
 
 const register: RequestHandler = async (req, res) => {
   const reqData = req?.body;
@@ -77,8 +77,8 @@ const login: RequestHandler = async (req, res) => {
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: isNotTestEnv(), // Secure only in production
-    // sameSite: "Strict",
-    path: "/auth/getNewAccessToken",
+    sameSite: "none",
+    path: "/api/logout",
     maxAge: configConstants.refreshTokenValidityInDays * 24 * 60 * 60 * 1000,
   });
   res.status(200).json({ success: true, message: "User Logged in", accessToken, expiresAt });
@@ -90,10 +90,9 @@ const logout: RequestHandler = async (req, res) => {
     res.status(401).json({ success: false, message: "Unauthorized" });
     return;
   }
-  const refreshToken = req?.cookies?.refreshToken;
 
+  const refreshToken = req?.cookies?.refreshToken;
   if (!refreshToken || typeof refreshToken != "string") {
-    console.log(2);
     res.status(422).json({ success: false, message: "No refreshToken provided" });
     return;
   }
@@ -117,6 +116,7 @@ const logout: RequestHandler = async (req, res) => {
     (configConstants.accessTokenValidityInMinutes + 1) * 60,
   );
   await redisClient.del("refreshToken:" + refreshToken);
+  res.clearCookie("refreshToken");
   res.status(204).json({ success: true, message: "Logged out" });
 };
 

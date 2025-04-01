@@ -14,6 +14,11 @@ app.use(cookieParser());
 app.use(
   cors({
     origin: configKeys.allowedOriginForCors,
+    // methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+    credentials: true,
+    // optionsSuccessStatus: 200,
+    // preflightContinue: true,
+    // allowedHeaders: ["Content-Type", "Authorization", "Accept", "Cookie", "X-PINGOTHER", "Set-Cookie"],
   }),
 );
 app.use(express.json());
