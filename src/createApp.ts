@@ -8,6 +8,7 @@ import { connectToDB } from "./database/setup/database";
 import cors from "cors";
 import configKeys from "./config/keys";
 import cookieParser from "cookie-parser";
+import errorHandler from "./middleware/errorHandler";
 
 const app = express();
 app.use(cookieParser());
@@ -25,6 +26,7 @@ if (beforeMiddlewares.length) {
 
 app.use(apiRouter);
 app.use(webRouter);
+app.use(errorHandler);
 
 connectToDB();
 

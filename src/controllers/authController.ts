@@ -8,19 +8,21 @@ import redisClient from "../redisClientSetup";
 import configConstants from "../config/constants";
 import { generateAccessTokenForUser } from "../utils/auth";
 import { isNotTestEnv } from "../utils/helpers";
+import catchErrors from "../utils/catchErrors";
+import { SC } from "../utils/http";
 
-const register: RequestHandler = async (req, res) => {
+const register: RequestHandler = catchErrors(async (req, res) => {
   const reqData = req?.body;
   const { validationSuccess, validatedData: data, validationError } = validateRegisterRequest(reqData);
 
   if (!validationSuccess || data == null) {
-    res.status(422).json({ message: "Invalid Input", _errors: validationError?.format() });
+    res.status(SC.UNPROCESSABLE_CONTENT).json({ message: "Invalid Input", _errors: validationError?.format() });
     return;
   }
 
   const existingUser = await User.findOne({ email: data?.email }).exec();
   if (existingUser) {
-    res.status(422).json({
+    res.status(SC.UNPROCESSABLE_CONTENT).json({
       message: "Email already registered",
       _errors: {
         email: {
@@ -39,26 +41,26 @@ const register: RequestHandler = async (req, res) => {
     createdAt: new Date(),
   });
 
-  res.status(201).json({ success: true, message: "User registered", createdUserId: createdUser?._id });
-};
+  res.status(SC.CREATED).json({ success: true, message: "User registered", createdUserId: createdUser?._id });
+});
 
-const login: RequestHandler = async (req, res) => {
+const login: RequestHandler = catchErrors(async (req, res) => {
   const reqData = req?.body;
   const { validationSuccess, validatedData: data } = validateLoginRequest(reqData);
 
   if (!validationSuccess || data == null) {
-    res.status(422).json({ message: "Invalid Input" });
+    res.status(SC.UNPROCESSABLE_CONTENT).json({ message: "Invalid Input" });
     return;
   }
 
   const existingUser = await User.findOne({ email: data?.email }).exec();
   if (!existingUser) {
-    res.status(401).json({ message: "Email or Password is not correct" });
+    res.status(SC.UNAUTHORIZED).json({ message: "Email or Password is not correct" });
     return;
   }
 
   if ((await bcrypt.compare(data?.password, existingUser?.password)) === false) {
-    res.status(401).json({ message: "Email or Password is not correct" });
+    res.status(SC.UNAUTHORIZED).json({ message: "Email or Password is not correct" });
     return;
   }
 
@@ -94,31 +96,31 @@ const login: RequestHandler = async (req, res) => {
       path: "/api/logout",
       maxAge: configConstants.refreshTokenValidityInDays * 24 * 60 * 60 * 1000,
     });
-  res.status(200).json({ success: true, message: "User Logged in", accessToken, expiresAt });
-};
+  res.status(SC.OK).json({ success: true, message: "User Logged in", accessToken, expiresAt });
+});
 
-const logout: RequestHandler = async (req, res) => {
+const logout: RequestHandler = catchErrors(async (req, res) => {
   const authHeader = req.headers["authorization"];
   if (!authHeader || typeof authHeader != "string") {
-    res.status(401).json({ success: false, message: "Unauthorized" });
+    res.status(SC.UNAUTHORIZED).json({ success: false, message: "Unauthorized" });
     return;
   }
 
   const refreshToken = req?.cookies?.refreshToken;
   if (!refreshToken || typeof refreshToken != "string") {
-    res.status(422).json({ success: false, message: "No refreshToken provided" });
+    res.status(SC.UNPROCESSABLE_CONTENT).json({ success: false, message: "No refreshToken provided" });
     return;
   }
 
   const [tokenType, accessToken] = authHeader.split(" ");
   if (tokenType != "Bearer") {
-    res.status(401).json({ success: false, message: "Unauthorized" });
+    res.status(SC.UNAUTHORIZED).json({ success: false, message: "Unauthorized" });
     return;
   }
 
   const isCachedRefreshToken = await redisClient.get("refreshToken:" + refreshToken);
   if (!isCachedRefreshToken) {
-    res.status(422).json({ success: false, message: "Invalid refresh Token" });
+    res.status(SC.UNPROCESSABLE_CONTENT).json({ success: false, message: "Invalid refresh Token" });
     return;
   }
 
@@ -136,20 +138,20 @@ const logout: RequestHandler = async (req, res) => {
     .clearCookie("refreshToken", {
       path: "/api/logout",
     });
-  res.status(204).json({ success: true, message: "Logged out" });
-};
+  res.status(SC.NO_CONTENT).json({ success: true, message: "Logged out" });
+});
 
-const getNewAccessToken: RequestHandler = async (req, res) => {
+const getNewAccessToken: RequestHandler = catchErrors(async (req, res) => {
   const refreshToken = req?.cookies?.refreshToken;
   if (!refreshToken) {
-    res.status(422).json({ success: false, message: "Token not provided" });
+    res.status(SC.UNPROCESSABLE_CONTENT).json({ success: false, message: "Token not provided" });
     return;
   }
 
   const cachedResult = await redisClient.get("refreshToken:" + refreshToken);
   const refreshTokenFound = !!cachedResult;
   if (!refreshTokenFound) {
-    res.status(403).json({ success: false, message: "Invalid Token" });
+    res.status(SC.FORBIDDEN).json({ success: false, message: "Invalid Token" });
     return;
   }
 
@@ -170,7 +172,7 @@ const getNewAccessToken: RequestHandler = async (req, res) => {
   const userId = decodedData?._id;
   const user = await User.findOne({ _id: userId }).exec();
   if (!user) {
-    res.status(401).json({ success: false, message: "Unauthorized" });
+    res.status(SC.UNAUTHORIZED).json({ success: false, message: "Unauthorized" });
     return;
   }
 
@@ -180,8 +182,8 @@ const getNewAccessToken: RequestHandler = async (req, res) => {
     configConstants.accessTokenValidityInMinutes,
   );
 
-  res.status(200).json({ success: true, message: "Token Refreshed", accessToken, expiresAt });
-};
+  res.status(SC.OK).json({ success: true, message: "Token Refreshed", accessToken, expiresAt });
+});
 
 export default {
   register,

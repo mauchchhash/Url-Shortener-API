@@ -1,5 +1,5 @@
 const configConstants = {
-  accessTokenValidityInMinutes: 5,
+  accessTokenValidityInMinutes: 15,
   refreshTokenValidityInDays: 30,
 
   // For debugging:
