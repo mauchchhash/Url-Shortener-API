@@ -3,6 +3,7 @@ import User, { IUser } from "../database/models/UserModel";
 import jwt from "jsonwebtoken";
 import { Types } from "mongoose";
 import { Response } from "supertest";
+import { minutesToMilliseconds, minutesToSeconds, nMinutesFromNow } from "./date";
 
 export const generateAccessTokenForUser = (
   user: IUser,
@@ -10,9 +11,9 @@ export const generateAccessTokenForUser = (
   accessTokenValidityInMinutes: number,
 ) => {
   const accessToken = jwt.sign({ _id: user._id, tokenCreatedAt: new Date().toISOString() }, accessTokenSecret, {
-    expiresIn: accessTokenValidityInMinutes * 60,
+    expiresIn: minutesToSeconds(accessTokenValidityInMinutes),
   });
-  const expiresAt = new Date().getTime() + accessTokenValidityInMinutes * 60 * 1000;
+  const expiresAt = nMinutesFromNow(accessTokenValidityInMinutes);
   return { accessToken, expiresAt };
 };
 

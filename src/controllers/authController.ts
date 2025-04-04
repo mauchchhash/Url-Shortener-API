@@ -10,28 +10,16 @@ import { generateAccessTokenForUser } from "../utils/auth";
 import { isNotTestEnv } from "../utils/helpers";
 import catchErrors from "../utils/catchErrors";
 import { SC } from "../utils/http";
+import { daysToMilliseconds, daysToSeconds, minutesToSeconds } from "../utils/date";
+import appAssert from "../utils/appAssert";
+import appErrorCode from "../utils/appErrorCode";
 
 const register: RequestHandler = catchErrors(async (req, res) => {
   const reqData = req?.body;
-  const { validationSuccess, validatedData: data, validationError } = validateRegisterRequest(reqData);
-
-  if (!validationSuccess || data == null) {
-    res.status(SC.UNPROCESSABLE_CONTENT).json({ message: "Invalid Input", _errors: validationError?.format() });
-    return;
-  }
+  const data = validateRegisterRequest(reqData);
 
   const existingUser = await User.findOne({ email: data?.email }).exec();
-  if (existingUser) {
-    res.status(SC.UNPROCESSABLE_CONTENT).json({
-      message: "Email already registered",
-      _errors: {
-        email: {
-          _errors: ["Email already in use"],
-        },
-      },
-    });
-    return;
-  }
+  appAssert(!existingUser, SC.CONFLICT, "Email already in use", appErrorCode.EmailInUse);
 
   const hashedPassword = await bcrypt.hash(data?.password, 10);
   const createdUser = await User.create({
@@ -46,12 +34,7 @@ const register: RequestHandler = catchErrors(async (req, res) => {
 
 const login: RequestHandler = catchErrors(async (req, res) => {
   const reqData = req?.body;
-  const { validationSuccess, validatedData: data } = validateLoginRequest(reqData);
-
-  if (!validationSuccess || data == null) {
-    res.status(SC.UNPROCESSABLE_CONTENT).json({ message: "Invalid Input" });
-    return;
-  }
+  const data = validateLoginRequest(reqData);
 
   const existingUser = await User.findOne({ email: data?.email }).exec();
   if (!existingUser) {
@@ -78,7 +61,7 @@ const login: RequestHandler = catchErrors(async (req, res) => {
     "refreshToken:" + refreshToken,
     existingUser._id.toString(),
     "EX",
-    (configConstants.refreshTokenValidityInDays + 1) * 24 * 60 * 60,
+    daysToSeconds(configConstants.refreshTokenValidityInDays + 1),
   );
 
   res
@@ -87,14 +70,14 @@ const login: RequestHandler = catchErrors(async (req, res) => {
       secure: isNotTestEnv(),
       sameSite: "strict",
       path: "/api/auth/getNewAccessToken",
-      maxAge: configConstants.refreshTokenValidityInDays * 24 * 60 * 60 * 1000,
+      maxAge: daysToMilliseconds(configConstants.refreshTokenValidityInDays),
     })
     .cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: isNotTestEnv(),
       sameSite: "strict",
       path: "/api/logout",
-      maxAge: configConstants.refreshTokenValidityInDays * 24 * 60 * 60 * 1000,
+      maxAge: daysToMilliseconds(configConstants.refreshTokenValidityInDays),
     });
   res.status(SC.OK).json({ success: true, message: "User Logged in", accessToken, expiresAt });
 });
@@ -128,7 +111,7 @@ const logout: RequestHandler = catchErrors(async (req, res) => {
     "blockedAccessToken:" + accessToken,
     req?.authUserId?.toString() ?? isCachedRefreshToken,
     "EX",
-    (configConstants.accessTokenValidityInMinutes + 1) * 60,
+    minutesToSeconds(configConstants.accessTokenValidityInMinutes + 1),
   );
   await redisClient.del("refreshToken:" + refreshToken);
   res
@@ -163,7 +146,7 @@ const getNewAccessToken: RequestHandler = catchErrors(async (req, res) => {
         "blockedAccessToken:" + accessToken,
         req?.authUserId?.toString() ?? cachedResult,
         "EX",
-        (configConstants.accessTokenValidityInMinutes + 1) * 60,
+        minutesToSeconds(configConstants.accessTokenValidityInMinutes + 1),
       );
     }
   }

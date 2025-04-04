@@ -3,22 +3,23 @@ import jwt from "jsonwebtoken";
 import configKeys from "../config/keys";
 import mongoose from "mongoose";
 import redisClient from "../redisClientSetup";
+import { SC } from "../utils/http";
 
 const authMiddleware: RequestHandler = async (req, res, next) => {
   const authHeader = req.headers["authorization"];
   if (!authHeader || typeof authHeader != "string") {
-    res.status(401).json({ success: false, message: "Unauthorized" });
+    res.status(SC.UNAUTHORIZED).json({ success: false, message: "Unauthorized" });
     return;
   }
   const [tokenType, accessToken] = authHeader.split(" ");
   if (tokenType != "Bearer" || !accessToken) {
-    res.status(401).json({ success: false, message: "Unauthorized" });
+    res.status(SC.UNAUTHORIZED).json({ success: false, message: "Unauthorized" });
     return;
   }
 
   const isBlockedAccessToken = await redisClient.get("blockedAccessToken:" + accessToken);
   if (isBlockedAccessToken) {
-    res.status(401).json({ success: false, message: "Unauthorized" });
+    res.status(SC.UNAUTHORIZED).json({ success: false, message: "Unauthorized" });
     return;
   }
 
@@ -28,7 +29,7 @@ const authMiddleware: RequestHandler = async (req, res, next) => {
     req.authUserId = new mongoose.Types.ObjectId(userId);
     next();
   } catch (_err) {
-    res.status(403).json({ success: false, message: "Token expired" });
+    res.status(SC.FORBIDDEN).json({ success: false, message: "Token expired" });
   }
 };
 

@@ -5,6 +5,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import configKeys from "../src/config/keys";
 import { getRefreshTokenFromSuperTestResponse } from "../src/utils/auth";
+import { SC } from "../src/utils/http";
+import appErrorCode from "./utils/appErrorCode";
 
 describe("Authentication suite", () => {
   // ------------------------------------------------------
@@ -18,7 +20,7 @@ describe("Authentication suite", () => {
     };
     const response = await request(app).post("/api/register").send(data);
 
-    expect(response.statusCode).toEqual(201);
+    expect(response.statusCode).toEqual(SC.CREATED);
     expect(typeof response.body.createdUserId).not.toBeNull();
 
     const id = response.body.createdUserId;
@@ -40,11 +42,11 @@ describe("Authentication suite", () => {
     };
     const response = await request(app).post("/api/register").send(data);
 
-    expect(response.statusCode).toEqual(422);
+    expect(response.statusCode).toEqual(SC.UNPROCESSABLE_CONTENT);
     expect(response.body._errors.email._errors.length).toBeGreaterThan(0);
   });
 
-  test("Register: using same email twice throws 422 error", async () => {
+  test("Register: using same email twice throws 409 error", async () => {
     const data1 = {
       fullname: "John Doe",
       email: "johndoe@example.com",
@@ -58,8 +60,8 @@ describe("Authentication suite", () => {
       password: "password",
     };
     const response = await request(app).post("/api/register").send(data2);
-    expect(response.statusCode).toBe(422);
-    expect(response.body._errors.email._errors.length).toBeGreaterThan(0);
+    expect(response.statusCode).toBe(SC.CONFLICT);
+    expect(response.body.errorCode).toBe(appErrorCode.EmailInUse);
   });
 
   test("Register: passwords are saved as hashed string", async () => {
@@ -95,7 +97,7 @@ describe("Authentication suite", () => {
       password: "password",
     };
     const loginResponse = await request(app).post("/api/login").send(loginData);
-    expect(loginResponse.statusCode).toBe(200);
+    expect(loginResponse.statusCode).toBe(SC.OK);
     expect(loginResponse.body.success).toBe(true);
     const accessToken = loginResponse.body.accessToken;
     expect(typeof accessToken).toBe("string");
@@ -118,7 +120,7 @@ describe("Authentication suite", () => {
       password: "password",
     };
     const loginResponse = await request(app).post("/api/login").send(loginData);
-    expect(loginResponse.statusCode).toBe(200);
+    expect(loginResponse.statusCode).toBe(SC.OK);
     expect(loginResponse.body.success).toBe(true);
     const accessToken = loginResponse.body.accessToken;
     expect(typeof accessToken).toBe("string");
@@ -147,7 +149,7 @@ describe("Authentication suite", () => {
     ];
     for (const loginData of wrongLoginData) {
       const loginResponse = await request(app).post("/api/login").send(loginData);
-      expect(loginResponse.statusCode).toBe(401);
+      expect(loginResponse.statusCode).toBe(SC.UNAUTHORIZED);
     }
   });
 
@@ -157,7 +159,7 @@ describe("Authentication suite", () => {
       password: "password",
     };
     const loginResponse = await request(app).post("/api/login").send(loginData);
-    expect(loginResponse.statusCode).toBe(422);
+    expect(loginResponse.statusCode).toBe(SC.UNPROCESSABLE_CONTENT);
   });
 
   test("Login: accessToken, expiresAt & refreshToken is returned after login", async () => {
@@ -211,7 +213,7 @@ describe("Authentication suite", () => {
       .post("/api/logout")
       .set("Authorization", "Bearer " + accessToken)
       .set("Cookie", "refreshToken=" + refreshToken);
-    expect(logoutResponse.statusCode).toBe(204);
+    expect(logoutResponse.statusCode).toBe(SC.NO_CONTENT);
   });
 
   // ------------------------------------------------------
@@ -270,17 +272,17 @@ describe("Authentication suite", () => {
         .post("/api/logout")
         .set("Authorization", "Bearer " + accessToken)
         .set("Cookie", "refreshToken=" + refreshToken);
-      expect(logoutResponse.statusCode).toBe(204);
+      expect(logoutResponse.statusCode).toBe(SC.NO_CONTENT);
 
       const res1 = await request(app)
         .get("/api/users/me")
         .set("Authorization", "Bearer " + accessToken);
-      expect(res1?.statusCode).toBe(401);
+      expect(res1?.statusCode).toBe(SC.UNAUTHORIZED);
 
       const res2 = await request(app)
         .post("/api/auth/getNewAccessToken")
         .set("Cookie", "refreshToken=" + refreshToken);
-      expect(res2?.statusCode).toBe(403);
+      expect(res2?.statusCode).toBe(SC.FORBIDDEN);
     });
   });
 });
