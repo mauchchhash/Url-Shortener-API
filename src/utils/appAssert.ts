@@ -6,12 +6,12 @@ import appErrorCode from "./appErrorCode";
 type appAssertType = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   condition: any,
-  httpStatusCode: HttpStatusCode,
   errorMessage: string,
+  httpStatusCode: HttpStatusCode,
   errorCode?: appErrorCode,
 ) => asserts condition;
 
-const appAssert: appAssertType = (condition, httpStatusCode, errorMessage, errorCode) =>
-  assert(condition, new AppError(httpStatusCode, errorMessage, errorCode));
+const appAssert: appAssertType = (condition, errorMessage, httpStatusCode, errorCode) =>
+  assert(condition, new AppError(errorMessage, httpStatusCode, errorCode));
 
 export default appAssert;

@@ -282,7 +282,7 @@ describe("Authentication suite", () => {
       const res2 = await request(app)
         .post("/api/auth/getNewAccessToken")
         .set("Cookie", "refreshToken=" + refreshToken);
-      expect(res2?.statusCode).toBe(SC.FORBIDDEN);
+      expect(res2?.statusCode).toBe(SC.UNAUTHORIZED);
     });
   });
 });

@@ -3,8 +3,8 @@ import { HttpStatusCode } from "./http";
 
 class AppError extends Error {
   constructor(
-    public statusCode: HttpStatusCode,
     public message: string,
+    public statusCode: HttpStatusCode,
     public errorCode: appErrorCode = appErrorCode.Unspecified,
   ) {
     super(message);

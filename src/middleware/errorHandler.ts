@@ -2,6 +2,7 @@ import { ErrorRequestHandler, Response } from "express";
 import { z } from "zod";
 import { SC } from "../utils/http";
 import AppError from "../utils/AppError";
+import { isNotTestEnv } from "../utils/helpers";
 
 const handleZodError = (err: z.ZodError, res: Response) => {
   res.status(SC.UNPROCESSABLE_CONTENT).json({
@@ -17,8 +18,8 @@ const handleAppError = (err: AppError, res: Response) => {
   });
 };
 
-const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  // console.log(`PATH: ${req.path}`, err);
+const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
+  if (isNotTestEnv()) console.log(`PATH: ${req.path}`, err);
 
   if (err instanceof z.ZodError) {
     handleZodError(err, res);

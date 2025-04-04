@@ -19,7 +19,7 @@ const register: RequestHandler = catchErrors(async (req, res) => {
   const data = validateRegisterRequest(reqData);
 
   const existingUser = await User.findOne({ email: data?.email }).exec();
-  appAssert(!existingUser, SC.CONFLICT, "Email already in use", appErrorCode.EmailInUse);
+  appAssert(!existingUser, "Email already in use", SC.CONFLICT, appErrorCode.EmailInUse);
 
   const hashedPassword = await bcrypt.hash(data?.password, 10);
   const createdUser = await User.create({
@@ -37,15 +37,10 @@ const login: RequestHandler = catchErrors(async (req, res) => {
   const data = validateLoginRequest(reqData);
 
   const existingUser = await User.findOne({ email: data?.email }).exec();
-  if (!existingUser) {
-    res.status(SC.UNAUTHORIZED).json({ message: "Email or Password is not correct" });
-    return;
-  }
+  appAssert(existingUser, "Email or Password is not correct", SC.UNAUTHORIZED, appErrorCode.WrongEmailOrPassword);
 
-  if ((await bcrypt.compare(data?.password, existingUser?.password)) === false) {
-    res.status(SC.UNAUTHORIZED).json({ message: "Email or Password is not correct" });
-    return;
-  }
+  const isPasswordCorrect = await bcrypt.compare(data?.password, existingUser?.password);
+  appAssert(isPasswordCorrect, "Email or Password is not correct", SC.UNAUTHORIZED, appErrorCode.WrongEmailOrPassword);
 
   const { accessToken, expiresAt } = generateAccessTokenForUser(
     existingUser,
@@ -53,16 +48,8 @@ const login: RequestHandler = catchErrors(async (req, res) => {
     configConstants.accessTokenValidityInMinutes,
   );
 
-  const refreshToken = jwt.sign(
-    { _id: existingUser._id, tokenCreatedAt: new Date().toISOString() },
-    configKeys.refreshTokenSecret,
-  );
-  redisClient.set(
-    "refreshToken:" + refreshToken,
-    existingUser._id.toString(),
-    "EX",
-    daysToSeconds(configConstants.refreshTokenValidityInDays + 1),
-  );
+  const refreshToken = jwt.sign({ _id: existingUser._id, tokenCreatedAt: new Date().toISOString() }, configKeys.refreshTokenSecret);
+  redisClient.set("refreshToken:" + refreshToken, existingUser._id.toString(), "EX", daysToSeconds(configConstants.refreshTokenValidityInDays + 1));
 
   res
     .cookie("refreshToken", refreshToken, {
@@ -84,28 +71,16 @@ const login: RequestHandler = catchErrors(async (req, res) => {
 
 const logout: RequestHandler = catchErrors(async (req, res) => {
   const authHeader = req.headers["authorization"];
-  if (!authHeader || typeof authHeader != "string") {
-    res.status(SC.UNAUTHORIZED).json({ success: false, message: "Unauthorized" });
-    return;
-  }
+  appAssert(authHeader && typeof authHeader == "string", "No authorization header provided", SC.UNAUTHORIZED, appErrorCode.NoAuthHeader);
 
   const refreshToken = req?.cookies?.refreshToken;
-  if (!refreshToken || typeof refreshToken != "string") {
-    res.status(SC.UNPROCESSABLE_CONTENT).json({ success: false, message: "No refreshToken provided" });
-    return;
-  }
+  appAssert(refreshToken && typeof refreshToken == "string", "No refreshToken provided", SC.UNAUTHORIZED, appErrorCode.NoRefreshToken);
 
   const [tokenType, accessToken] = authHeader.split(" ");
-  if (tokenType != "Bearer") {
-    res.status(SC.UNAUTHORIZED).json({ success: false, message: "Unauthorized" });
-    return;
-  }
+  appAssert(tokenType == "Bearer", "No Bearer Token provided", SC.UNAUTHORIZED, appErrorCode.NoBearerToken);
 
   const isCachedRefreshToken = await redisClient.get("refreshToken:" + refreshToken);
-  if (!isCachedRefreshToken) {
-    res.status(SC.UNPROCESSABLE_CONTENT).json({ success: false, message: "Invalid refresh Token" });
-    return;
-  }
+  appAssert(isCachedRefreshToken, "Invalid refresh Token", SC.BAD_REQUEST, appErrorCode.InvalidRefreshToken);
 
   await redisClient.set(
     "blockedAccessToken:" + accessToken,
@@ -126,17 +101,10 @@ const logout: RequestHandler = catchErrors(async (req, res) => {
 
 const getNewAccessToken: RequestHandler = catchErrors(async (req, res) => {
   const refreshToken = req?.cookies?.refreshToken;
-  if (!refreshToken) {
-    res.status(SC.UNPROCESSABLE_CONTENT).json({ success: false, message: "Token not provided" });
-    return;
-  }
+  appAssert(refreshToken, "No refresh token", SC.UNAUTHORIZED, appErrorCode.NoRefreshToken);
 
   const cachedResult = await redisClient.get("refreshToken:" + refreshToken);
-  const refreshTokenFound = !!cachedResult;
-  if (!refreshTokenFound) {
-    res.status(SC.FORBIDDEN).json({ success: false, message: "Invalid Token" });
-    return;
-  }
+  appAssert(cachedResult, "Invalid refresh token", SC.UNAUTHORIZED, appErrorCode.InvalidRefreshToken);
 
   const authHeader = req.headers["authorization"];
   if (authHeader && typeof authHeader == "string") {
@@ -154,16 +122,9 @@ const getNewAccessToken: RequestHandler = catchErrors(async (req, res) => {
   const decodedData = <{ _id: string } & object>jwt.verify(refreshToken, configKeys.refreshTokenSecret);
   const userId = decodedData?._id;
   const user = await User.findOne({ _id: userId }).exec();
-  if (!user) {
-    res.status(SC.UNAUTHORIZED).json({ success: false, message: "Unauthorized" });
-    return;
-  }
+  appAssert(user, "User not found", SC.NOT_FOUND, appErrorCode.UserNotFound);
 
-  const { accessToken, expiresAt } = generateAccessTokenForUser(
-    user,
-    configKeys.accessTokenSecret,
-    configConstants.accessTokenValidityInMinutes,
-  );
+  const { accessToken, expiresAt } = generateAccessTokenForUser(user, configKeys.accessTokenSecret, configConstants.accessTokenValidityInMinutes);
 
   res.status(SC.OK).json({ success: true, message: "Token Refreshed", accessToken, expiresAt });
 });
