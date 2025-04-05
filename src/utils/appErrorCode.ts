@@ -8,6 +8,7 @@ const enum appErrorCode {
   NoAuthHeader = "NoAuthHeader",
   NoRefreshToken = "NoRefreshToken",
   NoBearerToken = "NoBearerToken",
+  UrlNotProvided = "UrlNotProvided",
 }
 
 export default appErrorCode;

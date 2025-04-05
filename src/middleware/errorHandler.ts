@@ -19,6 +19,7 @@ const handleAppError = (err: AppError, res: Response) => {
 };
 
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
+  // console.log(`PATH: ${req.path}`, err);
   if (isNotTestEnv()) console.log(`PATH: ${req.path}`, err);
 
   if (err instanceof z.ZodError) {
