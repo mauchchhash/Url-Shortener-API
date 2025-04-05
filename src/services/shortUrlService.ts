@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import ShortUrl from "../database/models/ShortUrlModel";
 import appAssert from "../utils/appAssert";
 import { SC } from "../utils/http";
+import ShortUrlRepository from "../repository/ShortUrlRepository";
 
 const numToShortUrlString = (num: number) => {
   const alphabets = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -22,15 +23,17 @@ const numToShortUrlString = (num: number) => {
 };
 
 export const createShortUrl = async (userId: Types.ObjectId, longUrl: string) => {
-  const totalUrls = await ShortUrl.countDocuments();
-  const shortUrlSegment = numToShortUrlString(totalUrls + 1);
-  const newShortUrl = await ShortUrl.create({ userId, shortUrlSegment, longUrl: longUrl, createdAt: Date.now() });
+  const repo = new ShortUrlRepository();
+  const totalUrls = await repo.countDocuments();
+  const shortUrlSegment = numToShortUrlString(totalUrls + 1) as string;
+  const newShortUrl = await repo.create({ userId, shortUrlSegment, longUrl: longUrl, createdAt: new Date() });
   appAssert(newShortUrl instanceof ShortUrl, "ShortUrl couldn't be created", SC.INTERNAL_SERVER_ERROR);
   return newShortUrl;
 };
 
 export const deleteShortUrl = async (userId: Types.ObjectId, shortUrlId: string | Types.ObjectId) => {
-  const deleteResult = await ShortUrl.findOneAndDelete({ userId, _id: shortUrlId }).exec();
+  const repo = new ShortUrlRepository();
+  const deleteResult = await repo.findOneAndDelete({ userId, _id: shortUrlId });
   appAssert(deleteResult instanceof ShortUrl, "shortUrlId not valid", SC.BAD_REQUEST);
   return deleteResult;
 };

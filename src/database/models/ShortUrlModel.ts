@@ -3,8 +3,8 @@ import mongoose, { Document } from "mongoose";
 export interface IShortUrl extends Document {
   _id: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
-  longUrl: "string";
-  shortUrlSegment: "string";
+  longUrl: string;
+  shortUrlSegment: string;
   createdAt: Date;
 }
 
