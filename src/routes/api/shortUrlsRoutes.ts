@@ -4,5 +4,6 @@ import shortUrlsController from "../../controllers/shortUrlsController";
 
 const shortUrlsRouter = Router();
 shortUrlsRouter.post("/", authMiddleware, shortUrlsController.create);
+shortUrlsRouter.delete("/:shortUrlId", authMiddleware, shortUrlsController.deleteShortUrl);
 
 export default shortUrlsRouter;
