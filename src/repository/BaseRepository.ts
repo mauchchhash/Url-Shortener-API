@@ -14,6 +14,15 @@ abstract class BaseRepository<T extends Document> {
     return this.model.findOne(query).exec();
   }
 
+  async paginatedFind(query: FilterQuery<T> = {}, page: number = 1, perPage: number = 20): Promise<T[]> {
+    const prevPage = page >= 1 ? page - 1 : 0;
+    return this.model
+      .find(query)
+      .skip(perPage * prevPage)
+      .limit(perPage)
+      .exec();
+  }
+
   async countDocuments(query: FilterQuery<T> = {}): Promise<number> {
     return this.model.countDocuments(query);
   }

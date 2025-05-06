@@ -78,4 +78,11 @@ describe("Short Url Suite", () => {
       .set("Authorization", "Bearer " + accessToken);
     expect(deleteResponse.statusCode).toBe(SC.BAD_REQUEST);
   });
+
+  test("get: user can get his paginated short urls", async () => {
+    const response = await request(app)
+      .get("/api/shortUrls")
+      .set("Authorization", "Bearer " + accessToken);
+    expect(response.statusCode).toBe(SC.OK);
+  });
 });

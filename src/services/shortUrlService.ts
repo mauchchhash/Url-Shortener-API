@@ -22,6 +22,13 @@ const numToShortUrlString = (num: number) => {
   return result;
 };
 
+export const paginatedGet = async (userId: Types.ObjectId, page: number = 1, perPage: number = 20) => {
+  const repo = new ShortUrlRepository();
+  const shortUrls = await repo.paginatedFind({ userId }, page, perPage);
+  appAssert(Array.isArray(shortUrls), "Couldn't get shorturls", SC.INTERNAL_SERVER_ERROR);
+  return shortUrls;
+};
+
 export const createShortUrl = async (userId: Types.ObjectId, longUrl: string) => {
   const repo = new ShortUrlRepository();
   const totalUrls = await repo.countDocuments();
@@ -39,6 +46,7 @@ export const deleteShortUrl = async (userId: Types.ObjectId, shortUrlId: string 
 };
 
 export default {
+  paginatedGet,
   createShortUrl,
   deleteShortUrl,
 };
