@@ -1,4 +1,4 @@
-FROM node:bullseye
+FROM node:23.11.0-bullseye
 RUN corepack enable && yarn set version stable
 WORKDIR /app
 COPY . /app
