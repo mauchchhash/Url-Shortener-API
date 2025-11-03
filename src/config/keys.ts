@@ -6,7 +6,7 @@ const configKeys = {
   mongoPort: process?.env?.MONGODB_PORT ?? "27017",
   mongoDbName: process?.env?.MONGODB_DBNAME ?? "url_shortener",
 
-  accessTokenSecret: process?.env?.ACCESS_TOKEN_SECRET ?? "27017",
+  accessTokenSecret: process?.env?.ACCESS_TOKEN_SECRET ?? "accessTokenSecret",
   refreshTokenSecret: process?.env?.REFRESH_TOKEN_SECRET ?? "url_shortener",
 
   // testMongoHost: process?.env?.TEST_MONGODB_HOST ?? "test-db",
@@ -18,4 +18,5 @@ const configKeys = {
 
   allowedOriginForCors: process?.env?.ALLOWED_ORIGIN_FOR_CORS?.split(",") ?? ["*"],
 };
+console.log(configKeys);
 export default configKeys;
